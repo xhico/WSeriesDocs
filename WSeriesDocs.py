@@ -189,7 +189,7 @@ def main():
         hasPics = getScreenshots(postHref)
 
         # Tweet!
-        tweet("NEW DOC" + "\n" + postTitle + "\n\n" + postHref + "\n\n" + hashtags, hasPics)
+        # tweet("NEW DOC" + "\n" + postTitle + "\n\n" + postHref + "\n\n" + hashtags, hasPics)
 
         # Save log
         with open(LOG_FILE) as inFile:
@@ -201,14 +201,14 @@ def main():
         print()
 
     # Get tweets -> Like them
-    favTweets(hashtags, 2)
+    favTweets(hashtags, 5)
 
 
 if __name__ == "__main__":
     print("----------------------------------------------------")
 
-    headless = True
     options = Options()
+    headless = True
     options.headless = headless
     service = Service("/home/pi/geckodriver")
     # service = Service(r"C:\Users\xhico\OneDrive\Useful\geckodriver.exe")
