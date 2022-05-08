@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # !/usr/bin/python3
 
-# python3 -m pip install yagmail tweepy selenium pdf2image --no-cache-dir
+# python3 -m pip install yagmail tweepy selenium pdf2image pylovepdf --no-cache-dir
 # sudo apt install poppler-utils -y
 import json
 import os
@@ -14,6 +14,7 @@ from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.firefox.options import Options
 from selenium.webdriver.firefox.service import Service
+from pylovepdf.tools.officepdf import OfficeToPdf
 
 
 def get911(key):
@@ -29,6 +30,7 @@ ACCESS_TOKEN_SECRET = get911('TWITTER_WSERIES_ACCESS_TOKEN_SECRET')
 EMAIL_USER = get911('EMAIL_USER')
 EMAIL_APPPW = get911('EMAIL_APPPW')
 EMAIL_RECEIVER = get911('EMAIL_RECEIVER')
+ILOVEPDF_API_KEY_PUBLIC = get911('ILOVEPDF_API_KEY_PUBLIC')
 
 auth = tweepy.OAuthHandler(CONSUMER_KEY, CONSUMER_SECRET)
 auth.set_access_token(ACCESS_TOKEN, ACCESS_TOKEN_SECRET)
@@ -37,7 +39,7 @@ api = tweepy.API(auth)
 
 def getLastTweetedPost():
     try:
-        with open('log.json') as inFile:
+        with open(LOG_FILE) as inFile:
             data = json.load(inFile)[0]
         return data["title"], data["href"]
     except Exception:
@@ -80,23 +82,36 @@ def getScreenshots(pdfHref):
         os.mkdir(tmpFolder)
 
         # Download PDF
-        pdfFile = os.path.join(tmpFolder, "tmp.pdf")
-        with open(pdfFile, "wb") as inFile:
+        postFile = os.path.join(tmpFolder, "tmp." + pdfHref.split(".")[-1])
+        with open(postFile, "wb") as inFile:
             inFile.write(requests.get(pdfHref).content)
+
+        # Convert docx to pdf
+        if postFile[-5:] == ".docx" or postFile[-4:] == ".doc":
+            t = OfficeToPdf(ILOVEPDF_API_KEY_PUBLIC, verify_ssl=True, proxies=[])
+            t.add_file(os.path.join(os.path.dirname(os.path.abspath(__file__)), postFile))
+            t.set_output_folder(tmpFolder)
+            t.execute()
+            t.download()
+            t.delete_current_task()
+            postFile = sorted([file for file in os.listdir(tmpFolder) if file.split(".")[-1] == "pdf"])[0]
+            postFile = os.path.join(tmpFolder, postFile)
 
         # Check what OS
         if os.name == "nt":
-            pages = pdf2image.convert_from_path(poppler_path=r"poppler-win\Library\bin", pdf_path=pdfFile)
+            poppler_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "poppler-win\Library\bin")
+            pages = pdf2image.convert_from_path(poppler_path=poppler_path, pdf_path=postFile)
         else:
-            pages = pdf2image.convert_from_path(pdf_path=pdfFile)
+            pages = pdf2image.convert_from_path(pdf_path=postFile)
 
         # Save the first four pages
         for idx, page in enumerate(pages[0:4]):
             jpgFile = os.path.join(tmpFolder, "tmp_" + str(idx) + ".jpg")
             page.save(jpgFile)
         hasPics = True
-    except Exception:
+    except Exception as ex:
         print("Failed to screenshot")
+        print(ex)
         hasPics = False
 
     return hasPics
@@ -106,7 +121,7 @@ def getRaceHashtags(eventTitle):
     hashtags = ""
 
     try:
-        with open("raceHashtags.json") as inFile:
+        with open(HASHTAGS_FILE) as inFile:
             hashtags = json.load(inFile)[eventTitle]
     except Exception as ex:
         print("Failed to get Race hashtags")
@@ -177,10 +192,10 @@ def main():
         tweet("NEW DOC" + "\n" + postTitle + "\n\n" + postHref + "\n\n" + hashtags, hasPics)
 
         # Save log
-        with open("log.json") as inFile:
+        with open(LOG_FILE) as inFile:
             data = list(reversed(json.load(inFile)))
             data.append(post)
-        with open("log.json", "w") as outFile:
+        with open(LOG_FILE, "w") as outFile:
             json.dump(list(reversed(data)), outFile, indent=2)
 
         print()
@@ -191,7 +206,7 @@ def main():
 
 if __name__ == "__main__":
     print("----------------------------------------------------")
-    os.chdir(os.path.dirname(os.path.abspath(__file__)))
+
     headless = True
     options = Options()
     options.headless = headless
@@ -200,7 +215,9 @@ if __name__ == "__main__":
     browser = webdriver.Firefox(service=service, options=options)
 
     # Set temp folder
-    tmpFolder = r"tmp"
+    tmpFolder = os.path.join(os.path.dirname(os.path.abspath(__file__)), "tmp")
+    LOG_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "log.json")
+    HASHTAGS_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "raceHashtags.json")
 
     try:
         main()
