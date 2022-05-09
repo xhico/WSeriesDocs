@@ -10,7 +10,6 @@ import requests
 import tweepy
 import yagmail
 import pdf2image
-import urllib.parse
 from bs4 import BeautifulSoup
 from pylovepdf.tools.officepdf import OfficeToPdf
 
