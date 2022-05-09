@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 # !/usr/bin/python3
 
-# python3 -m pip install yagmail tweepy  pdf2image pylovepdf --no-cache-dir
-# sudo apt install poppler-utils python-html5lib -y
+# python3 -m pip install yagmail tweepy html5lib pdf2image pylovepdf --no-cache-dir
+# sudo apt install poppler-utils -y
 import json
 import os
 import shutil
@@ -10,6 +10,7 @@ import requests
 import tweepy
 import yagmail
 import pdf2image
+import urllib.parse
 from bs4 import BeautifulSoup
 from pylovepdf.tools.officepdf import OfficeToPdf
 
@@ -210,11 +211,10 @@ if __name__ == "__main__":
     LOG_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "log.json")
     HASHTAGS_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "raceHashtags.json")
 
-    # try:
-    #     main()
-    # except Exception as ex:
-    #     print(ex)
-    #     yagmail.SMTP(EMAIL_USER, EMAIL_APPPW).send(EMAIL_RECEIVER, "Error - " + os.path.basename(__file__), str(ex))
-    # finally:
-    #     print("End")
-    main()
+    try:
+        main()
+    except Exception as ex:
+        print(ex)
+        yagmail.SMTP(EMAIL_USER, EMAIL_APPPW).send(EMAIL_RECEIVER, "Error - " + os.path.basename(__file__), str(ex))
+    finally:
+        print("End")
