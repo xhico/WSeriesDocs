@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 # !/usr/bin/python3
 
-# python3 -m pip install yagmail tweepy selenium pdf2image pylovepdf --no-cache-dir
-# sudo apt install poppler-utils -y
+# python3 -m pip install yagmail tweepy  pdf2image pylovepdf --no-cache-dir
+# sudo apt install poppler-utils python-html5lib -y
 import json
 import os
 import shutil
@@ -10,10 +10,7 @@ import requests
 import tweepy
 import yagmail
 import pdf2image
-from selenium import webdriver
-from selenium.webdriver.common.by import By
-from selenium.webdriver.firefox.options import Options
-from selenium.webdriver.firefox.service import Service
+from bs4 import BeautifulSoup
 from pylovepdf.tools.officepdf import OfficeToPdf
 
 
@@ -50,20 +47,21 @@ def getPosts():
     # Get last tweeted post date and title
     lastTitle, lastHref = getLastTweetedPost()
 
+    # Make soup
+    soup = BeautifulSoup(requests.get("https://wseries.com/notice-boards/").text, 'html5lib')
+
     # Get Last Race
-    browser.get("https://wseries.com/notice-boards/")
-    lastRace = browser.find_element(By.CLASS_NAME, "archive__item__title")
-    lastRaceHref = lastRace.get_attribute("href")
+    lastRace = soup.find("a", {"class": "archive__item__title"})
     lastRaceTitle = lastRace.text.split(" | ")[1].strip().title()
 
     # Get Race Documents
     newPosts = []
-    browser.get(lastRaceHref)
-    documents = browser.find_element(By.CLASS_NAME, "board__table").find_elements(By.TAG_NAME, "a")
+    soup = BeautifulSoup(requests.get(lastRace.get("href")).text, 'html5lib')
+    documents = soup.find("div", {"class": "board__table"}).find_all("a")
     for document in reversed(documents):
         # Get title and href
-        postTitle = document.find_element(By.TAG_NAME, "span").text
-        postHref = document.get_attribute("href")
+        postTitle = document.find("span").text.strip()
+        postHref = document.get("href")
 
         # Check if post is valid ? Add to new posts : break
         if postTitle != lastTitle and postHref != lastHref:
@@ -189,7 +187,7 @@ def main():
         hasPics = getScreenshots(postHref)
 
         # Tweet!
-        # tweet("NEW DOC" + "\n" + postTitle + "\n\n" + postHref + "\n\n" + hashtags, hasPics)
+        tweet("NEW DOC" + "\n" + postTitle + "\n\n" + postHref + "\n\n" + hashtags, hasPics)
 
         # Save log
         with open(LOG_FILE) as inFile:
@@ -201,31 +199,22 @@ def main():
         print()
 
     # Get tweets -> Like them
-    favTweets(hashtags, 5)
+    favTweets(hashtags, 1)
 
 
 if __name__ == "__main__":
     print("----------------------------------------------------")
-
-    options = Options()
-    headless = True
-    options.headless = headless
-    service = Service("/home/pi/geckodriver")
-    # service = Service(r"C:\Users\xhico\OneDrive\Useful\geckodriver.exe")
-    browser = webdriver.Firefox(service=service, options=options)
 
     # Set temp folder
     tmpFolder = os.path.join(os.path.dirname(os.path.abspath(__file__)), "tmp")
     LOG_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "log.json")
     HASHTAGS_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "raceHashtags.json")
 
-    try:
-        main()
-    except Exception as ex:
-        print(ex)
-        yagmail.SMTP(EMAIL_USER, EMAIL_APPPW).send(EMAIL_RECEIVER, "Error - " + os.path.basename(__file__), str(ex))
-    finally:
-        if headless:
-            browser.close()
-            print("Close")
-        print("End")
+    # try:
+    #     main()
+    # except Exception as ex:
+    #     print(ex)
+    #     yagmail.SMTP(EMAIL_USER, EMAIL_APPPW).send(EMAIL_RECEIVER, "Error - " + os.path.basename(__file__), str(ex))
+    # finally:
+    #     print("End")
+    main()
