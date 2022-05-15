@@ -174,7 +174,7 @@ def main():
 
     # Set hashtags
     hashtags = getRaceHashtags(eventTitle)
-    hashtags += " " + "#WSeries #Formula #GrandPrix #Motorsports #Racing"
+    hashtags += " " + "#WSeries #Formula #GrandPrix"
 
     # Go through each new post
     for post in newPosts:
