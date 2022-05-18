@@ -171,7 +171,7 @@ def main():
         hasPics = getScreenshots(postHref)
 
         # Tweet!
-        tweet("NEW DOC" + "\n" + postTitle + "\n\n" + postHref + "\n\n" + hashtags, hasPics)
+        tweet("NEW DOC" + "\n\n" + postTitle + "\n\n" + postHref + "\n\n" + hashtags, hasPics)
 
         # Save log
         with open(LOG_FILE) as inFile:
