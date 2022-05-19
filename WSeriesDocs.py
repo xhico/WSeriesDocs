@@ -52,7 +52,6 @@ def getPosts():
 
     # Make soup
     url = "https://wseries.com/notice-boards/?category=" + str(datetime.datetime.now().year)
-    print(url)
     soup = BeautifulSoup(requests.get(url).text, 'html5lib')
 
     # Get Last Race
@@ -184,11 +183,10 @@ def main():
         with open(LOG_FILE, "w") as outFile:
             json.dump(list(reversed(data)), outFile, indent=2)
 
-        print()
-
 
 if __name__ == "__main__":
     print("----------------------------------------------------")
+    print(datetime.datetime.strftime(datetime.datetime.utcnow(), "%Y/%m/%d %H:%M UTC"))
 
     # Set temp folder
     tmpFolder = os.path.join(os.path.dirname(os.path.abspath(__file__)), "tmp")
@@ -212,3 +210,4 @@ if __name__ == "__main__":
             # Remove isRunning file
             os.remove(ISRUNNING_FILE)
             print("End")
+            print("----------------------------------------------------")
