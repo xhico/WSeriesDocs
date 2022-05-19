@@ -3,9 +3,11 @@
 
 # python3 -m pip install yagmail tweepy html5lib pdf2image pylovepdf --no-cache-dir
 # sudo apt install poppler-utils -y
+import datetime
 import json
 import os
 import shutil
+
 import requests
 import tweepy
 import yagmail
@@ -34,25 +36,29 @@ auth.set_access_token(ACCESS_TOKEN, ACCESS_TOKEN_SECRET)
 api = tweepy.API(auth)
 
 
-def getLastTweetedPost():
+def getLog():
     try:
         with open(LOG_FILE) as inFile:
-            data = json.load(inFile)[0]
-        return data["title"], data["href"]
+            log = json.load(inFile)
     except Exception:
-        return "", ""
+        log = {}
+
+    return log
 
 
 def getPosts():
     # Get last tweeted post date and title
-    lastTitle, lastHref = getLastTweetedPost()
+    log = getLog()
 
     # Make soup
-    soup = BeautifulSoup(requests.get("https://wseries.com/notice-boards/").text, 'html5lib')
+    url = "https://wseries.com/notice-boards/?category=" + str(datetime.datetime.now().year)
+    print(url)
+    soup = BeautifulSoup(requests.get(url).text, 'html5lib')
 
     # Get Last Race
     lastRace = soup.find("a", {"class": "archive__item__title"})
     lastRaceTitle = lastRace.text.split(" | ")[1].strip().title()
+    print("lastRaceTitle - " + lastRaceTitle)
 
     # Get Race Documents
     newPosts = []
@@ -64,10 +70,8 @@ def getPosts():
         postHref = document.get("href")
 
         # Check if post is valid ? Add to new posts : break
-        if postTitle != lastTitle and postHref != lastHref:
+        if {"title": postTitle, "href": postHref} not in log:
             newPosts.append({"title": postTitle, "href": postHref})
-        else:
-            break
 
     return lastRaceTitle, newPosts
 
@@ -190,11 +194,21 @@ if __name__ == "__main__":
     tmpFolder = os.path.join(os.path.dirname(os.path.abspath(__file__)), "tmp")
     LOG_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "log.json")
     HASHTAGS_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "raceHashtags.json")
+    ISRUNNING_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "isRunning.tmp")
 
-    try:
-        main()
-    except Exception as ex:
-        print(ex)
-        yagmail.SMTP(EMAIL_USER, EMAIL_APPPW).send(EMAIL_RECEIVER, "Error - " + os.path.basename(__file__), str(ex))
-    finally:
-        print("End")
+    # Check if isRunning file exists
+    if os.path.exists(ISRUNNING_FILE):
+        print("isRunning")
+    else:
+        # Create isRunning file
+        open(ISRUNNING_FILE, "x")
+
+        try:
+            main()
+        except Exception as ex:
+            print(ex)
+            yagmail.SMTP(EMAIL_USER, EMAIL_APPPW).send(EMAIL_RECEIVER, "Error - " + os.path.basename(__file__), str(ex))
+        finally:
+            # Remove isRunning file
+            os.remove(ISRUNNING_FILE)
+            print("End")

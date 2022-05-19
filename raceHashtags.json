@@ -1,9 +1,10 @@
 {
-  "Miami": "#MiamiGP #Miami",
+  "Miami": "#MiamiGP #Miami #WSeriesMiami",
   "Cota": "#COTA #UnitedStatesGP",
-  "Zandvoort": "#DutchGP #Zandvoort",
+  "Zandvoort": "#DutchGP #Zandvoort #WSeriesZandvoort",
   "Spa": "#BelgianGP #SpaFrancorchamps",
-  "Hungary": "#HungarianGP",
-  "Silverstone": "#BritishGP #GreatBritain #Silverstone",
-  "Red Bull Ring": "#AustrianGP #RedBullRing"
+  "Hungary": "#HungarianGP #WSeriesBarcelona",
+  "Silverstone": "#BritishGP #GreatBritain #Silverstone #WSeriesBarcelona",
+  "Red Bull Ring": "#AustrianGP #RedBullRing #WSeriesBarcelona",
+  "Barcelona": "#SpanishGP #WSeriesBarcelona"
 }
