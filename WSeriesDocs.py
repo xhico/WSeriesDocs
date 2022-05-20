@@ -173,8 +173,11 @@ def main():
         # Screenshot DPF
         hasPics = getScreenshots(postHref)
 
+        # Set date
+        postDate = datetime.datetime.strftime(datetime.datetime.utcnow(), "%Y/%m/%d %H:%M UTC")
+
         # Tweet!
-        tweet("NEW DOC" + "\n\n" + postTitle + "\n\n" + postHref + "\n\n" + hashtags, hasPics)
+        tweet("NEW DOC" + "\n\n" + postTitle + "\n\n" + "Published at: " + postDate + "\n\n" + postHref + "\n\n" + hashtags, hasPics)
 
         # Save log
         with open(LOG_FILE) as inFile:
