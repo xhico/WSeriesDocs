@@ -189,7 +189,7 @@ def main():
 
 if __name__ == "__main__":
     print("----------------------------------------------------")
-    print(datetime.datetime.strftime(datetime.datetime.utcnow(), "%Y/%m/%d %H:%M UTC"))
+    print(str(datetime.datetime.now().strftime("%Y/%m/%d %H:%M:%S")))
 
     # Set temp folder
     tmpFolder = os.path.join(os.path.dirname(os.path.abspath(__file__)), "tmp")
@@ -213,4 +213,3 @@ if __name__ == "__main__":
             # Remove isRunning file
             os.remove(ISRUNNING_FILE)
             print("End")
-            print("----------------------------------------------------")
