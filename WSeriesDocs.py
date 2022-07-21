@@ -161,7 +161,7 @@ def main():
 
     # Set hashtags
     hashtags = getRaceHashtags(eventTitle)
-    hashtags += " " + "#WSeries #Formula #GrandPrix"
+    hashtags += " " + "#WSeries #GrandPrix"
 
     # Go through each new post
     for post in newPosts:
@@ -177,7 +177,7 @@ def main():
         postDate = datetime.datetime.strftime(datetime.datetime.utcnow(), "%Y/%m/%d %H:%M UTC")
 
         # Tweet!
-        tweet("NEW DOC" + "\n\n" + postTitle + "\n\n" + "Published at: " + postDate + "\n\n" + postHref + "\n\n" + hashtags, hasPics)
+        tweet(postTitle + "\n\n" + "Published at: " + postDate + "\n\n" + postHref + "\n\n" + hashtags, hasPics)
 
         # Save log
         with open(LOG_FILE) as inFile:
