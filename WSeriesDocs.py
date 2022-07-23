@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # !/usr/bin/python3
 
-# python3 -m pip install yagmail tweepy html5lib pdf2image pylovepdf --no-cache-dir
+# python3 -m pip install yagmail tweepy html5lib pdf2image pylovepdf psutil --no-cache-dir
 # sudo apt install poppler-utils -y
 import datetime
 import json
@@ -75,41 +75,48 @@ def getPosts():
     return lastRaceTitle, newPosts
 
 
-def getScreenshots(pdfHref):
+def getScreenshots(postHref):
     try:
         # Reset tmpFolder
         if os.path.exists(tmpFolder):
             shutil.rmtree(tmpFolder)
         os.mkdir(tmpFolder)
 
-        # Download PDF
-        postFile = os.path.join(tmpFolder, "tmp." + pdfHref.split(".")[-1])
-        with open(postFile, "wb") as inFile:
-            inFile.write(requests.get(pdfHref).content)
-
-        # Convert docx to pdf
-        if postFile[-5:] == ".docx" or postFile[-4:] == ".doc":
-            t = OfficeToPdf(ILOVEPDF_API_KEY_PUBLIC, verify_ssl=True, proxies=[])
-            t.add_file(os.path.join(os.path.dirname(os.path.abspath(__file__)), postFile))
-            t.set_output_folder(tmpFolder)
-            t.execute()
-            t.download()
-            t.delete_current_task()
-            postFile = sorted([file for file in os.listdir(tmpFolder) if file.split(".")[-1] == "pdf"])[0]
-            postFile = os.path.join(tmpFolder, postFile)
-
-        # Check what OS
-        if os.name == "nt":
-            poppler_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "poppler-win\Library\bin")
-            pages = pdf2image.convert_from_path(poppler_path=poppler_path, pdf_path=postFile)
+        # Check if postHref is already an image
+        if postHref[-4:] == [".png"] or postHref[-4:] == ".png" or postHref[-5:] == ".jpeg":
+            jpgFile = os.path.join(tmpFolder, "tmp.jpg")
+            with open(jpgFile, "wb") as outFile:
+                outFile.write(requests.get(postHref).content)
+            hasPics = True
         else:
-            pages = pdf2image.convert_from_path(pdf_path=postFile)
+            # Download PDF
+            postFile = os.path.join(tmpFolder, "tmp." + postHref.split(".")[-1])
+            with open(postFile, "wb") as inFile:
+                inFile.write(requests.get(postHref).content)
 
-        # Save the first four pages
-        for idx, page in enumerate(pages[0:4]):
-            jpgFile = os.path.join(tmpFolder, "tmp_" + str(idx) + ".jpg")
-            page.save(jpgFile)
-        hasPics = True
+            # Convert docx to pdf
+            if postFile[-5:] == ".docx" or postFile[-4:] == ".doc":
+                t = OfficeToPdf(ILOVEPDF_API_KEY_PUBLIC, verify_ssl=True, proxies=[])
+                t.add_file(os.path.join(os.path.dirname(os.path.abspath(__file__)), postFile))
+                t.set_output_folder(tmpFolder)
+                t.execute()
+                t.download()
+                t.delete_current_task()
+                postFile = sorted([file for file in os.listdir(tmpFolder) if file.split(".")[-1] == "pdf"])[0]
+                postFile = os.path.join(tmpFolder, postFile)
+
+            # Check what OS
+            if os.name == "nt":
+                poppler_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "poppler-win\Library\bin")
+                pages = pdf2image.convert_from_path(poppler_path=poppler_path, pdf_path=postFile)
+            else:
+                pages = pdf2image.convert_from_path(pdf_path=postFile)
+
+            # Save the first four pages
+            for idx, page in enumerate(pages[0:4]):
+                jpgFile = os.path.join(tmpFolder, "tmp_" + str(idx) + ".jpg")
+                page.save(jpgFile)
+            hasPics = True
     except Exception as ex:
         print("Failed to screenshot")
         print(ex)
@@ -185,6 +192,8 @@ def main():
             data.append(post)
         with open(LOG_FILE, "w") as outFile:
             json.dump(list(reversed(data)), outFile, indent=2)
+
+        print("")
 
 
 if __name__ == "__main__":
