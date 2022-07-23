@@ -52,7 +52,7 @@ def getPosts():
 
     # Make soup
     url = "https://wseries.com/notice-boards/?category=" + str(datetime.datetime.now().year)
-    soup = BeautifulSoup(requests.get(url).text, 'html5lib')
+    soup = BeautifulSoup(requests.get(url, timeout=30).text, 'html5lib')
 
     # Get Last Race
     lastRace = soup.find("a", {"class": "archive__item__title"})
