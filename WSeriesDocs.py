@@ -12,6 +12,7 @@ import requests
 import tweepy
 import yagmail
 import pdf2image
+import traceback
 from bs4 import BeautifulSoup
 from pylovepdf.tools.officepdf import OfficeToPdf
 
@@ -213,7 +214,7 @@ if __name__ == "__main__":
         try:
             main()
         except Exception as ex:
-            print(ex)
-            yagmail.SMTP(EMAIL_USER, EMAIL_APPPW).send(EMAIL_RECEIVER, "Error - " + os.path.basename(__file__), str(ex))
+            print(traceback.format_exc())
+            yagmail.SMTP(EMAIL_USER, EMAIL_APPPW).send(EMAIL_RECEIVER, "Error - " + os.path.basename(__file__), str(traceback.format_exc()))
         finally:
             print("End")
