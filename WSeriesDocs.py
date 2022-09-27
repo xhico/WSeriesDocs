@@ -51,29 +51,40 @@ def getPosts():
     # Get last tweeted post date and title
     log = getLog()
 
-    # Make soup
-    url = "https://wseries.com/notice-boards/?category=" + str(datetime.datetime.now().year)
-    soup = BeautifulSoup(requests.get(url, timeout=30).text, 'html5lib')
+    try:
+        # Make soup
+        url = "https://wseries.com/notice-boards/?category=" + str(datetime.datetime.now().year)
+        print(url)
+        r = requests.get(url, timeout=30).text
+        soup = BeautifulSoup(r, 'html5lib')
 
-    # Get Last Race
-    lastRace = soup.find("a", {"class": "archive__item__title"})
-    lastRaceTitle = lastRace.text.split(" | ")[1].strip().title()
-    print("lastRaceTitle - " + lastRaceTitle)
+        # Get Last Race
+        lastRace = soup.find("a", {"class": "archive__item__title"})
+        lastRaceTitle = lastRace.text.split(" | ")[1].strip().title()
+        print("lastRaceTitle - " + lastRaceTitle)
 
-    # Get Race Documents
-    newPosts = []
-    soup = BeautifulSoup(requests.get(lastRace.get("href")).text, 'html5lib')
-    documents = soup.find("div", {"class": "board__table"}).find_all("a")
-    for document in reversed(documents):
-        # Get title and href
-        postTitle = document.find("span").text.strip()
-        postHref = document.get("href")
+        # Get Race Documents
+        newPosts = []
+        url = lastRace.get("href")
+        print(url)
+        r = requests.get(url).text
+        soup = BeautifulSoup(r, 'html5lib')
+        documents = soup.find("div", {"class": "board__table"}).find_all("a")
+        for document in reversed(documents):
+            # Get title and href
+            postTitle = document.find("span").text.strip()
+            postHref = document.get("href")
 
-        # Check if post is valid ? Add to new posts : break
-        if {"title": postTitle, "href": postHref} not in log:
-            newPosts.append({"title": postTitle, "href": postHref})
+            # Check if post is valid ? Add to new posts : break
+            if {"title": postTitle, "href": postHref} not in log:
+                newPosts.append({"title": postTitle, "href": postHref})
 
-    return lastRaceTitle, newPosts
+        return lastRaceTitle, newPosts
+
+    except Exception as ex:
+        print(ex)
+        print("Failed to get Posts")
+        return None, []
 
 
 def getScreenshots(postHref):
@@ -165,6 +176,8 @@ def batchDelete():
 def main():
     # Get latest posts
     eventTitle, newPosts = getPosts()
+    if eventTitle is None:
+        return
     newPosts = list(reversed(newPosts))
 
     # Set hashtags
