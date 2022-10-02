@@ -15,6 +15,8 @@ import pdf2image
 import traceback
 from bs4 import BeautifulSoup
 from pylovepdf.tools.officepdf import OfficeToPdf
+import urllib.request
+import urllib.parse
 
 
 def get911(key):
@@ -87,14 +89,14 @@ def getScreenshots(postHref):
         os.mkdir(tmpFolder)
 
         # Check if postHref is already an image
-        if postHref[-4:] == [".png"] or postHref[-4:] == ".jpg" or postHref[-5:] == ".jpeg":
-            jpgFile = os.path.join(tmpFolder, "tmp.jpg")
-            with open(jpgFile, "wb") as outFile:
-                outFile.write(requests.get(postHref).content)
+        fileExt = postHref.split(".")[-1]
+        if fileExt in ["png", "jpg", "jpeg"]:
+            tmpFile = os.path.join(tmpFolder, "tmp." + fileExt)
+            urllib.request.urlretrieve(postHref, tmpFile)
             hasPics = True
         else:
             # Download PDF
-            postFile = os.path.join(tmpFolder, "tmp." + postHref.split(".")[-1])
+            postFile = os.path.join(tmpFolder, "tmp." + fileExt)
             with open(postFile, "wb") as inFile:
                 inFile.write(requests.get(postHref).content)
 
