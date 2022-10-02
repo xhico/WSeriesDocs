@@ -92,7 +92,8 @@ def getScreenshots(postHref):
         fileExt = postHref.split(".")[-1]
         if fileExt in ["png", "jpg", "jpeg"]:
             tmpFile = os.path.join(tmpFolder, "tmp." + fileExt)
-            urllib.request.urlretrieve(postHref, tmpFile)
+            with open(tmpFile, 'wb') as imgFile:
+                imgFile.write(requests.get(postHref).content)
             hasPics = True
         else:
             # Download PDF
@@ -148,7 +149,7 @@ def tweet(tweetStr, hasPics):
     try:
         media_ids = []
         if hasPics:
-            imageFiles = sorted([file for file in os.listdir(tmpFolder) if file.split(".")[-1] == "jpg"])
+            imageFiles = sorted([file for file in os.listdir(tmpFolder) if file.split(".")[-1] in ["png", "jpg", "jpeg"]])
             media_ids = [api.media_upload(os.path.join(tmpFolder, image)).media_id_string for image in imageFiles]
 
         api.update_status(status=tweetStr, media_ids=media_ids)
