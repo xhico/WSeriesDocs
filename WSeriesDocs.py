@@ -3,6 +3,7 @@
 
 # python3 -m pip install yagmail tweepy html5lib pdf2image pylovepdf psutil --no-cache-dir
 # sudo apt install poppler-utils -y
+
 import datetime
 import json
 import os
@@ -14,15 +15,10 @@ import yagmail
 import pdf2image
 import traceback
 import logging
-
+import base64
 from bs4 import BeautifulSoup
 from pylovepdf.tools.officepdf import OfficeToPdf
-
-
-def get911(key):
-    with open('/home/pi/.911') as f:
-        data = json.load(f)
-    return data[key]
+from Misc import get911
 
 
 def getLog():
