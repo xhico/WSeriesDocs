@@ -13,10 +13,10 @@ import tweepy
 import yagmail
 import pdf2image
 import traceback
+import logging
+
 from bs4 import BeautifulSoup
 from pylovepdf.tools.officepdf import OfficeToPdf
-import urllib.request
-import urllib.parse
 
 
 def get911(key):
@@ -25,23 +25,9 @@ def get911(key):
     return data[key]
 
 
-CONSUMER_KEY = get911('TWITTER_WSERIES_CONSUMER_KEY')
-CONSUMER_SECRET = get911('TWITTER_WSERIES_CONSUMER_SECRET')
-ACCESS_TOKEN = get911('TWITTER_WSERIES_ACCESS_TOKEN')
-ACCESS_TOKEN_SECRET = get911('TWITTER_WSERIES_ACCESS_TOKEN_SECRET')
-EMAIL_USER = get911('EMAIL_USER')
-EMAIL_APPPW = get911('EMAIL_APPPW')
-EMAIL_RECEIVER = get911('EMAIL_RECEIVER')
-ILOVEPDF_API_KEY_PUBLIC = get911('ILOVEPDF_API_KEY_PUBLIC')
-
-auth = tweepy.OAuthHandler(CONSUMER_KEY, CONSUMER_SECRET)
-auth.set_access_token(ACCESS_TOKEN, ACCESS_TOKEN_SECRET)
-api = tweepy.API(auth)
-
-
 def getLog():
     try:
-        with open(LOG_FILE) as inFile:
+        with open(CONFIG_FILE) as inFile:
             log = json.load(inFile)
     except Exception:
         log = {}
@@ -65,7 +51,7 @@ def getPosts():
     # Get Race Documents
     newPosts = []
     url = lastRace.get("href")
-    print(url)
+    logger.info(url)
     r = requests.get(url).text
     soup = BeautifulSoup(r, 'html5lib')
     documents = soup.find("div", {"class": "files__table"}).find_all("a")
@@ -125,8 +111,7 @@ def getScreenshots(postHref):
                 page.save(jpgFile)
             hasPics = True
     except Exception as ex:
-        print("Failed to screenshot")
-        print(ex)
+        logger.error("Failed to screenshot")
         hasPics = False
 
     return hasPics
@@ -139,7 +124,7 @@ def getRaceHashtags(eventTitle):
         with open(HASHTAGS_FILE) as inFile:
             hashtags = json.load(inFile)[eventTitle]
     except Exception as ex:
-        print("Failed to get Race hashtags")
+        logger.error("Failed to get Race hashtags")
         yagmail.SMTP(EMAIL_USER, EMAIL_APPPW).send(EMAIL_RECEIVER, "Failed to get Race hashtags - " + os.path.basename(__file__), str(ex) + "\n\n" + eventTitle)
 
     return hashtags
@@ -153,14 +138,14 @@ def tweet(tweetStr, hasPics):
             media_ids = [api.media_upload(os.path.join(tmpFolder, image)).media_id_string for image in imageFiles]
 
         api.update_status(status=tweetStr, media_ids=media_ids)
-        print("Tweeted")
+        logger.info("Tweeted")
     except Exception as ex:
-        print("Failed to Tweet")
+        logger.error("Failed to Tweet")
         yagmail.SMTP(EMAIL_USER, EMAIL_APPPW).send(EMAIL_RECEIVER, "Failed to Tweet - " + os.path.basename(__file__), str(ex) + "\n\n" + tweetStr)
 
 
 def batchDelete():
-    print("Deleting all tweets from the account @" + api.verify_credentials().screen_name)
+    logger.info("Deleting all tweets from the account @" + api.verify_credentials().screen_name)
     for status in tweepy.Cursor(api.user_timeline).items():
         try:
             api.destroy_status(status.id)
@@ -177,14 +162,13 @@ def main():
     # Set hashtags
     hashtags = getRaceHashtags(eventTitle)
     hashtags += " " + "#WSeries #GrandPrix"
-    print("-----")
 
     # Go through each new post
     for post in newPosts:
         # Get post info
         postTitle, postHref = post["title"], post["href"]
-        print(postTitle)
-        print(postHref)
+        logger.info(postTitle)
+        logger.info(postHref)
 
         # Screenshot DPF
         hasPics = getScreenshots(postHref)
@@ -196,33 +180,47 @@ def main():
         tweet(postTitle + "\n\n" + "Published at: " + postDate + "\n\n" + postHref + "\n\n" + hashtags, hasPics)
 
         # Save log
-        with open(LOG_FILE) as inFile:
+        with open(CONFIG_FILE) as inFile:
             data = list(reversed(json.load(inFile)))
             data.append(post)
-        with open(LOG_FILE, "w") as outFile:
+        with open(CONFIG_FILE, "w") as outFile:
             json.dump(list(reversed(data)), outFile, indent=2)
-
-        print("")
 
 
 if __name__ == "__main__":
-    print("----------------------------------------------------")
-    print(str(datetime.datetime.now().strftime("%Y/%m/%d %H:%M:%S")))
+    # Set Logging
+    LOG_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), os.path.abspath(__file__).replace(".py", ".log"))
+    logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s", handlers=[logging.FileHandler(LOG_FILE), logging.StreamHandler()])
+    logger = logging.getLogger()
+
+    logger.info("----------------------------------------------------")
+    CONSUMER_KEY = get911('TWITTER_WSERIES_CONSUMER_KEY')
+    CONSUMER_SECRET = get911('TWITTER_WSERIES_CONSUMER_SECRET')
+    ACCESS_TOKEN = get911('TWITTER_WSERIES_ACCESS_TOKEN')
+    ACCESS_TOKEN_SECRET = get911('TWITTER_WSERIES_ACCESS_TOKEN_SECRET')
+    EMAIL_USER = get911('EMAIL_USER')
+    EMAIL_APPPW = get911('EMAIL_APPPW')
+    EMAIL_RECEIVER = get911('EMAIL_RECEIVER')
+    ILOVEPDF_API_KEY_PUBLIC = get911('ILOVEPDF_API_KEY_PUBLIC')
+
+    auth = tweepy.OAuthHandler(CONSUMER_KEY, CONSUMER_SECRET)
+    auth.set_access_token(ACCESS_TOKEN, ACCESS_TOKEN_SECRET)
+    api = tweepy.API(auth)
 
     # Set temp folder
     tmpFolder = os.path.join(os.path.dirname(os.path.abspath(__file__)), "tmp")
-    LOG_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "log.json")
+    CONFIG_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "config.json")
     HASHTAGS_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "raceHashtags.json")
 
     # Check if script is already running
     procs = [proc for proc in psutil.process_iter(attrs=["cmdline"]) if os.path.basename(__file__) in '\t'.join(proc.info["cmdline"])]
     if len(procs) > 2:
-        print("isRunning")
+        logger.info("isRunning")
     else:
         try:
             main()
         except Exception as ex:
-            print(traceback.format_exc())
+            logger.error(traceback.format_exc())
             yagmail.SMTP(EMAIL_USER, EMAIL_APPPW).send(EMAIL_RECEIVER, "Error - " + os.path.basename(__file__), str(traceback.format_exc()))
         finally:
-            print("End")
+            logger.info("End")
