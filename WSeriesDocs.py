@@ -26,7 +26,7 @@ def getLog():
         with open(CONFIG_FILE) as inFile:
             log = json.load(inFile)
     except Exception:
-        log = {}
+        log = []
 
     return log
 
@@ -176,6 +176,9 @@ def main():
         tweet(postTitle + "\n\n" + "Published at: " + postDate + "\n\n" + postHref + "\n\n" + hashtags, hasPics)
 
         # Save log
+        if not os.path.exists(CONFIG_FILE):
+            with open(CONFIG_FILE, "w") as outFile:
+                json.dump(list(reversed([])), outFile, indent=2)
         with open(CONFIG_FILE) as inFile:
             data = list(reversed(json.load(inFile)))
             data.append(post)
