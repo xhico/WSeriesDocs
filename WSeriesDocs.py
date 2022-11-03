@@ -15,7 +15,6 @@ import yagmail
 import pdf2image
 import traceback
 import logging
-import base64
 from bs4 import BeautifulSoup
 from pylovepdf.tools.officepdf import OfficeToPdf
 from Misc import get911
