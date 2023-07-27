@@ -1,0 +1,12 @@
+[Unit]
+Description=WSeriesDocs Service
+After=network.target
+
+[Service]
+User=pi
+WorkingDirectory=/home/pi/WSeriesDocs/
+ExecStart=/usr/bin/python3 /home/pi/WSeriesDocs/WSeriesDocs.py
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target
