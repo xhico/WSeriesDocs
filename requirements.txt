@@ -1,0 +1,7 @@
+yagmail
+tweepy
+html5lib
+pdf2image
+pylovepdf
+psutil
+beautifulsoup4

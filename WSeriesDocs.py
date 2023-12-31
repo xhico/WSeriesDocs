@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 # !/usr/bin/python3
 
-# python3 -m pip install yagmail tweepy html5lib pdf2image pylovepdf psutil --no-cache-dir
 # sudo apt install poppler-utils -y
 
 import datetime
